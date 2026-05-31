@@ -252,7 +252,7 @@ impl Matrix {
             }
         }
         for l in (0..n).rev() {
-            if indxr[l] != indxr[l] {
+            if indxr[l] != indxc[l] {
                 for k in 0..n {
                     let tmp = self.data[k][indxr[l]];
                     self.data[k][indxr[l]] = self.data[k][indxc[l]];
