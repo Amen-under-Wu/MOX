@@ -271,7 +271,7 @@ pub fn diffusion_eqn(
 pub fn diffusion_eqn_rz(
     grid: &Grid2D,
     border_r: BorderCond2D,
-    border_y: (BorderCond2D, BorderCond2D),
+    border_z: (BorderCond2D, BorderCond2D),
     coeff: Vec<Vec<Float>>,
     src: Fn2,
 ) -> (SparseMatrix, MyVec) {
@@ -309,19 +309,67 @@ pub fn diffusion_eqn_rz(
                         grid.idx(ri, zj.saturating_sub(1)),
                         grid.idx(ri, zj + 1),
                     );
-                    rhs[idx.0] = -src(r, z) *2.0*PI*r* dr * dz;
+                    rhs[idx.0] = -src(r, z) * dr * dz;
                     if ri != ri_offset
                         && zj != zj_offset
                         && ri != ri_offset + grid_r[rii].0 - 1
                         && zj != zj_offset + grid_z[zjj].0 - 1
                     {
-                        data.push((idx.0, idx.0, -2.0 * coeff_loc * (dz / dr + 2.0*PI*r*dr / dz)));
-                        data.push((idx.0, idx.1, coeff_loc * dz / dr));
-                        data.push((idx.0, idx.2, coeff_loc * dz / dr));
-                        data.push((idx.0, idx.3, coeff_loc * 2.0*PI*r*dr / dz));
-                        data.push((idx.0, idx.4, coeff_loc * 2.0*PI*r*dr / dz));
+                        data.push((idx.0, idx.0, -2.0 * coeff_loc * (dz / dr + dr / dz)));
+                        data.push((idx.0, idx.1, coeff_loc * (dz / dr + dz * 0.5 / r)));
+                        data.push((idx.0, idx.2, coeff_loc * (dz / dr - dz * 0.5 / r)));
+                        data.push((idx.0, idx.3, coeff_loc * dr / dz));
+                        data.push((idx.0, idx.4, coeff_loc * dr / dz));
                     } else {
-                        // todo
+                        if ri == ri_offset {
+                            // q = 0 at center
+                            if rii != 0 {
+                                let r_left = if rii == 1 {
+                                    grid.grid.0.bdr
+                                } else {
+                                    grid_r[rii - 2].1
+                                };
+                                let dr_left = (r0 - r_left) / grid_r[rii - 1].0 as Float;
+                                let coeff_left = coeff[rii - 1][zjj];
+                                let coeff_mean =
+                                    (dr + dr_left) / (dr / coeff_loc + dr_left / coeff_left);
+                                let dr_mean = 0.5 * (dr + dr_left);
+                                data.push((idx.0, idx.0, -coeff_mean * (dz / dr_mean - dz * 0.5 / r)));
+                                data.push((idx.0, idx.1, coeff_mean * (dz / dr_mean - dz * 0.5 / r)));
+                            }
+                        } else {
+                            data.push((idx.0, idx.0, -coeff_loc * (dz / dr - dz * 0.5 / r)));
+                            data.push((idx.0, idx.1, coeff_loc * (dz / dr - dz * 0.5 / r)));
+                        }
+                        if ri == ri_offset + grid_r[rii].0 - 1 {
+                            if rii == grid_r.len() - 1 {
+                                match &border_r {
+                                    BorderCond2D::Value(f) => {
+                                        data.push((idx.0, idx.0, -2.0 * coeff_loc * (dz / dr + dz * 0.5 / r)));
+                                        rhs[idx.0] -= 2.0 * coeff_loc * f(z) * (dz / dr + dz * 0.5 / r);
+                                    }
+                                    BorderCond2D::Deriv(f) => {
+                                        rhs[idx.0] -= coeff_loc * f(z) * (dz + dz * 0.5 * dr / r);
+                                    }
+                                    BorderCond2D::Comb(a, b, f) => {
+                                        let c = f(z);
+                                        let tf = c / a;
+                                        let alpha_mean = coeff_loc * 2.0 * a / (a * dr + 2.0 * b);
+                                        //rhs[idx.0] -= tf * alpha_mean * (dz / dr + dz * 0.5 / r);
+                                        //data.push((idx.0, idx.0, -alpha_mean * (dz / dr + dz * 0.5 / r)));
+                                    }
+                                }
+                            } else {
+                                let dr_right = (grid_r[rii + 1].1 - grid_r[rii].1)
+                                    / grid_r[rii + 1].0 as Float;
+                                let coeff_right = coeff[rii + 1][zjj];
+                                let coeff_mean =
+                                    (dr + dr_right) / (dr / coeff_loc + dr_right / coeff_right);
+                                let dr_mean = 0.5 * (dr + dr_right);
+                                data.push((idx.0, idx.0, -coeff_mean * (dz / dr_mean + dz * 0.5 / r)));
+                                data.push((idx.0, idx.2, coeff_mean * (dz / dr_mean + dz * 0.5 / r)));
+                            }
+                        }
                     }
                 }
             }
