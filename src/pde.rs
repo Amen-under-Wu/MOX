@@ -352,11 +352,13 @@ pub fn diffusion_eqn_rz(
                                         rhs[idx.0] -= coeff_loc * f(z) * (dz + dz * 0.5 * dr / r);
                                     }
                                     BorderCond2D::Comb(a, b, f) => {
+                                        // aT +b*dT/dr = c
+                                        // -lambda*dT/dr+alpha(T-T_f)=0
                                         let c = f(z);
                                         let tf = c / a;
-                                        let alpha_mean = coeff_loc * 2.0 * a / (a * dr + 2.0 * b);
-                                        //rhs[idx.0] -= tf * alpha_mean * (dz / dr + dz * 0.5 / r);
-                                        //data.push((idx.0, idx.0, -alpha_mean * (dz / dr + dz * 0.5 / r)));
+                                        let alpha_mean = coeff_loc * 2.0 * a / (a * dr - 2.0 * b);
+                                        rhs[idx.0] -= tf * alpha_mean * (dz / dr + dz * 0.5 / r);
+                                        data.push((idx.0, idx.0, -alpha_mean * (dz / dr + dz * 0.5 / r)));
                                     }
                                 }
                             } else {
@@ -369,6 +371,77 @@ pub fn diffusion_eqn_rz(
                                 data.push((idx.0, idx.0, -coeff_mean * (dz / dr_mean + dz * 0.5 / r)));
                                 data.push((idx.0, idx.2, coeff_mean * (dz / dr_mean + dz * 0.5 / r)));
                             }
+                        } else {
+                            data.push((idx.0, idx.0, -coeff_loc * (dz / dr + dz * 0.5 / r)));
+                            data.push((idx.0, idx.2, coeff_loc * (dz / dr + dz * 0.5 / r)));
+                        }
+                        if zj == zj_offset {
+                            if zjj == 0 {
+                                match &border_z.0 {
+                                    BorderCond2D::Value(f) => {
+                                        data.push((idx.0, idx.0, -2.0 * coeff_loc * dr / dz));
+                                        rhs[idx.0] -= 2.0 * coeff_loc * f(r) * dr / dz;
+                                    }
+                                    BorderCond2D::Deriv(f) => {
+                                        rhs[idx.0] += coeff_loc * f(r) * dr;
+                                    }
+                                    BorderCond2D::Comb(a, b, f) => {
+                                        let c = f(r);
+                                        let b = -b;
+                                        let tf = c / a;
+                                        let alpha_mean = coeff_loc * 2.0 * a / (a * dz + 2.0 * b);
+                                        rhs[idx.0] -= tf * alpha_mean * dr;
+                                        data.push((idx.0, idx.0, -alpha_mean * dr));
+                                    }
+                                }
+                            } else {
+                                let z_down = if zjj == 1 {
+                                    grid.grid.1.bdr
+                                } else {
+                                    grid_z[zjj - 2].1
+                                };
+                                let dz_down = (z0 - z_down) / grid_z[zjj - 1].0 as Float;
+                                let coeff_down = coeff[rii][zjj - 1];
+                                let coeff_mean =
+                                    (dz + dz_down) / (dz / coeff_loc + dz_down / coeff_down);
+                                let dz_mean = 0.5 * (dz + dz_down);
+                                data.push((idx.0, idx.0, -coeff_mean * dr / dz_mean));
+                                data.push((idx.0, idx.3, coeff_mean * dr / dz_mean));
+                            }
+                        } else {
+                            data.push((idx.0, idx.0, -coeff_loc * dr / dz));
+                            data.push((idx.0, idx.3, coeff_loc * dr / dz));
+                        }
+                        if zj == zj_offset + grid_z[zjj].0 - 1 {
+                            if zjj == grid_z.len() - 1 {
+                                match &border_z.1 {
+                                    BorderCond2D::Value(f) => {
+                                        data.push((idx.0, idx.0, -2.0 * coeff_loc * dr / dz));
+                                        rhs[idx.0] -= 2.0 * coeff_loc * f(r) * dr / dz;
+                                    }
+                                    BorderCond2D::Deriv(f) => {
+                                        rhs[idx.0] -= coeff_loc * f(r) * dr;
+                                    }
+                                    BorderCond2D::Comb(a, b, f) => {
+                                        let c = f(r);
+                                        let tf = c / a;
+                                        let alpha_mean = coeff_loc * 2.0 * a / (a * dz + 2.0 * b);
+                                        rhs[idx.0] -= tf * alpha_mean * dr;
+                                        data.push((idx.0, idx.0, -alpha_mean * dr));
+                                    }
+                                }
+                            } else {
+                                let dz_up = (grid_z[zjj + 1].1 - grid_z[zjj].1)
+                                    / grid_z[zjj + 1].0 as Float;
+                                let coeff_up = coeff[rii][zjj + 1];
+                                let coeff_mean = (dz + dz_up) / (dz / coeff_loc + dz_up / coeff_up);
+                                let dz_mean = 0.5 * (dz + dz_up);
+                                data.push((idx.0, idx.0, -coeff_mean * dr / dz_mean));
+                                data.push((idx.0, idx.4, coeff_mean * dr / dz_mean));
+                            }
+                        } else {
+                            data.push((idx.0, idx.0, -coeff_loc * dr / dz));
+                            data.push((idx.0, idx.4, coeff_loc * dr / dz));
                         }
                     }
                 }
