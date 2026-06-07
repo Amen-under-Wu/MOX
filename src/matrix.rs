@@ -583,7 +583,7 @@ impl JacobiSolver {
 }
 
 #[derive(Debug)]
-struct SORSolver {
+pub struct SORSolver {
     orig_mat: SparseMatrix,
     iter_mat: SparseMatrix,
     iter_vec: MyVec,

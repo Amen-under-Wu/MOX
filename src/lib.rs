@@ -1,6 +1,7 @@
 pub mod matrix;
 pub mod ode;
 pub mod pde;
+pub mod poly;
 
 pub mod nuke;
 pub mod thermo;

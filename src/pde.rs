@@ -334,8 +334,16 @@ pub fn diffusion_eqn_rz(
                                 let coeff_mean =
                                     (dr + dr_left) / (dr / coeff_loc + dr_left / coeff_left);
                                 let dr_mean = 0.5 * (dr + dr_left);
-                                data.push((idx.0, idx.0, -coeff_mean * (dz / dr_mean - dz * 0.5 / r)));
-                                data.push((idx.0, idx.1, coeff_mean * (dz / dr_mean - dz * 0.5 / r)));
+                                data.push((
+                                    idx.0,
+                                    idx.0,
+                                    -coeff_mean * (dz / dr_mean - dz * 0.5 / r),
+                                ));
+                                data.push((
+                                    idx.0,
+                                    idx.1,
+                                    coeff_mean * (dz / dr_mean - dz * 0.5 / r),
+                                ));
                             }
                         } else {
                             data.push((idx.0, idx.0, -coeff_loc * (dz / dr - dz * 0.5 / r)));
@@ -345,8 +353,13 @@ pub fn diffusion_eqn_rz(
                             if rii == grid_r.len() - 1 {
                                 match &border_r {
                                     BorderCond2D::Value(f) => {
-                                        data.push((idx.0, idx.0, -2.0 * coeff_loc * (dz / dr + dz * 0.5 / r)));
-                                        rhs[idx.0] -= 2.0 * coeff_loc * f(z) * (dz / dr + dz * 0.5 / r);
+                                        data.push((
+                                            idx.0,
+                                            idx.0,
+                                            -2.0 * coeff_loc * (dz / dr + dz * 0.5 / r),
+                                        ));
+                                        rhs[idx.0] -=
+                                            2.0 * coeff_loc * f(z) * (dz / dr + dz * 0.5 / r);
                                     }
                                     BorderCond2D::Deriv(f) => {
                                         rhs[idx.0] -= coeff_loc * f(z) * (dz + dz * 0.5 * dr / r);
@@ -358,7 +371,11 @@ pub fn diffusion_eqn_rz(
                                         let tf = c / a;
                                         let alpha_mean = coeff_loc * 2.0 * a / (a * dr - 2.0 * b);
                                         rhs[idx.0] -= tf * alpha_mean * (dz / dr + dz * 0.5 / r);
-                                        data.push((idx.0, idx.0, -alpha_mean * (dz / dr + dz * 0.5 / r)));
+                                        data.push((
+                                            idx.0,
+                                            idx.0,
+                                            -alpha_mean * (dz / dr + dz * 0.5 / r),
+                                        ));
                                     }
                                 }
                             } else {
@@ -368,8 +385,16 @@ pub fn diffusion_eqn_rz(
                                 let coeff_mean =
                                     (dr + dr_right) / (dr / coeff_loc + dr_right / coeff_right);
                                 let dr_mean = 0.5 * (dr + dr_right);
-                                data.push((idx.0, idx.0, -coeff_mean * (dz / dr_mean + dz * 0.5 / r)));
-                                data.push((idx.0, idx.2, coeff_mean * (dz / dr_mean + dz * 0.5 / r)));
+                                data.push((
+                                    idx.0,
+                                    idx.0,
+                                    -coeff_mean * (dz / dr_mean + dz * 0.5 / r),
+                                ));
+                                data.push((
+                                    idx.0,
+                                    idx.2,
+                                    coeff_mean * (dz / dr_mean + dz * 0.5 / r),
+                                ));
                             }
                         } else {
                             data.push((idx.0, idx.0, -coeff_loc * (dz / dr + dz * 0.5 / r)));
