@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use crate::Float;
 pub struct Polynomial {
     pub coeffs: Vec<f64>,

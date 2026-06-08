@@ -1,64 +1,37 @@
 use crate::Float;
-use crate::poly::Polynomial;
 
-pub struct Section {
-    group: i32,
-    sigtr: Float,
-    sigma: Float,
-    nusigf: Float,
-    rvau: Float,
-    sigf: Float,
-    sigr: Float,
+#[derive(Debug, Clone, Copy)]
+pub struct MaterialData {
+    pub sigtr: (Float, Float),
+    pub sigma: (Float, Float),
+    pub nusigf: (Float, Float),
+    pub sigf: (Float, Float),
+    pub sigr: Float,
 }
-impl Section {
+
+impl MaterialData {
     pub fn new(
-        group: i32,
-        sigtr: Float,
-        sigma: Float,
-        nusigf: Float,
-        rvau: Float,
-        sigf: Float,
+        sigtr: (Float, Float),
+        sigma: (Float, Float),
+        nusigf: (Float, Float),
+        sigf: (Float, Float),
         sigr: Float,
     ) -> Self {
         Self {
-            group,
             sigtr,
             sigma,
             nusigf,
-            rvau,
             sigf,
             sigr,
         }
     }
-}
-
-pub struct CouplingData {
-    mod_temp: Float,
-    fuel_temp: Float,
-}
-impl CouplingData {
-    pub fn new(mod_temp: Float, fuel_temp: Float) -> Self {
+    pub fn fuel() -> Self {
         Self {
-            mod_temp,
-            fuel_temp,
+            sigtr: (0.1665, 0.21745),
+            sigma: (5.988e-4, 2.395e-3),
+            nusigf: (1.4311e-4, 3.6931e-3),
+            sigf: (5.6475e-5, 1.447e-3),
+            sigr: 1.9215e-3,
         }
-    }
-}
-pub struct CoupCoeff {
-    pub default: CouplingData,
-    pub coeff_mt: Polynomial,
-    pub coeff_ft: Polynomial,
-}
-impl CoupCoeff {
-    pub fn new(default: CouplingData, coeff_mt: Polynomial, coeff_ft: Polynomial) -> Self {
-        Self {
-            default,
-            coeff_mt,
-            coeff_ft,
-        }
-    }
-    pub fn eval(&self, data: &CouplingData) -> Float {
-        self.coeff_mt.eval(data.mod_temp - self.default.mod_temp)
-            + self.coeff_ft.eval(data.fuel_temp - self.default.fuel_temp)
     }
 }
