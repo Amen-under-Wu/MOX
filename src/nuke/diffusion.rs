@@ -4,7 +4,7 @@ use crate::nuke::material::MaterialData;
 use crate::pde::{BorderCond2D, Grid2D, diffusion_eqn_rz};
 
 pub struct Diffusion {
-    material: Vec<Vec<MaterialData>>,
+    pub material: Vec<Vec<MaterialData>>,
     grid: Grid2D,
 }
 
@@ -21,28 +21,28 @@ impl Diffusion {
         let (grid_rn, grid_zn) = self.grid.grid_n();
         let mut bdr_r_vec = Vec::new();
         let mut bdr_z_vec = (Vec::new(), Vec::new());
-        for i in 0..grid_rn.len() {
-            bdr_r_vec.extend(vec![
-                (
-                    1.0,
-                    self.material[i][self.material[i].len() - 1].sigtr.0 / 0.7104,
-                    0.0
-                );
-                grid_rn[i]
-            ]);
-        }
         for i in 0..grid_zn.len() {
-            bdr_z_vec.0.extend(vec![
-                (1.0, -self.material[0][i].sigtr.0 / 0.7104, 0.0);
-                grid_zn[i]
-            ]);
-            bdr_z_vec.1.extend(vec![
+            bdr_r_vec.extend(vec![
                 (
                     1.0,
                     self.material[self.material.len() - 1][i].sigtr.0 / 0.7104,
                     0.0
                 );
                 grid_zn[i]
+            ]);
+        }
+        for i in 0..grid_rn.len() {
+            bdr_z_vec.0.extend(vec![
+                (1.0, -self.material[i][0].sigtr.0 / 0.7104, 0.0);
+                grid_rn[i]
+            ]);
+            bdr_z_vec.1.extend(vec![
+                (
+                    1.0,
+                    self.material[i][self.material[i].len() - 1].sigtr.0 / 0.7104,
+                    0.0
+                );
+                grid_rn[i]
             ]);
         }
         let rn = grid_rn.iter().sum();
@@ -52,10 +52,11 @@ impl Diffusion {
         for ri in 0..rn {
             for zi in 0..zn {
                 let idx = self.grid.idx(ri, zi);
+                //println!("idx: {}, ri: {}, zi: {}", idx, ri, zi);
                 let coarse = self.grid.to_coarse(ri, zi);
                 let mat = &self.material[coarse.0][coarse.1];
                 src_vec[ri][zi] = thermo_group[idx] * mat.nusigf.1;
-                add_data.push((idx, idx, mat.nusigf.0 - mat.sigtr.0));
+                add_data.push((idx, idx, mat.nusigf.0 - mat.sigr - mat.sigma.0));
             }
         }
         let add_mat = SparseMatrix::new_with_data(rn * zn, rn * zn, add_data);
@@ -80,28 +81,28 @@ impl Diffusion {
         let (grid_rn, grid_zn) = self.grid.grid_n();
         let mut bdr_r_vec = Vec::new();
         let mut bdr_z_vec = (Vec::new(), Vec::new());
-        for i in 0..grid_rn.len() {
+        for i in 0..grid_zn.len() {
             bdr_r_vec.extend(vec![
+                (
+                    1.0,
+                    self.material[self.material[i].len() - 1][i].sigtr.1 / 0.7104,
+                    0.0
+                );
+                grid_zn[i]
+            ]);
+        }
+        for i in 0..grid_rn.len() {
+            bdr_z_vec.0.extend(vec![
+                (1.0, -self.material[i][0].sigtr.1 / 0.7104, 0.0);
+                grid_rn[i]
+            ]);
+            bdr_z_vec.1.extend(vec![
                 (
                     1.0,
                     self.material[i][self.material[i].len() - 1].sigtr.1 / 0.7104,
                     0.0
                 );
                 grid_rn[i]
-            ]);
-        }
-        for i in 0..grid_zn.len() {
-            bdr_z_vec.0.extend(vec![
-                (1.0, -self.material[0][i].sigtr.1 / 0.7104, 0.0);
-                grid_zn[i]
-            ]);
-            bdr_z_vec.1.extend(vec![
-                (
-                    1.0,
-                    self.material[self.material.len() - 1][i].sigtr.1 / 0.7104,
-                    0.0
-                );
-                grid_zn[i]
             ]);
         }
         let rn = grid_rn.iter().sum();
@@ -114,7 +115,7 @@ impl Diffusion {
                 let coarse = self.grid.to_coarse(ri, zi);
                 let mat = &self.material[coarse.0][coarse.1];
                 src_vec[ri][zi] = fast_group[idx] * mat.sigr;
-                add_data.push((idx, idx, -mat.sigtr.1));
+                add_data.push((idx, idx, -mat.sigma.1));
             }
         }
         let add_mat = SparseMatrix::new_with_data(rn * zn, rn * zn, add_data);
@@ -146,12 +147,12 @@ impl Diffusion {
     }
     pub fn fast_group_flux(&self, thermo_group: &MyVec) -> MyVec {
         let (mat, src) = self.fast_group_eqn(thermo_group);
-        let solver = SORSolver::new(&mat, &src, 1.5);
+        let solver = SORSolver::new(&mat, &src, 1.0);
         solver.solve().unwrap()
     }
     pub fn thermo_group_flux(&self, fast_group: &MyVec) -> MyVec {
         let (mat, src) = self.thermo_group_eqn(fast_group);
-        let solver = SORSolver::new(&mat, &src, 1.5);
+        let solver = SORSolver::new(&mat, &src, 1.0);
         solver.solve().unwrap()
     }
 }

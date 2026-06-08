@@ -2,13 +2,12 @@ use crate::{
     Float,
     matrix::{MyVec, SparseMatrix},
 };
-//type Fn1 = Box<dyn Fn(Float) -> Float>;
-//type Fn2 = Box<dyn Fn(Float, Float) -> Float>;
 
 #[derive(Debug, Clone)]
 struct Grid1D {
     bdr: Float,
     grid: Vec<(usize, Float)>,
+    dx: Vec<Float>,
     n: usize,
     coord: Vec<Float>,
     grid_idx: Vec<usize>,
@@ -18,16 +17,19 @@ impl Grid1D {
         let n = grid.iter().map(|x| x.0).sum();
         let (mut coord, mut grid_idx) = (Vec::new(), Vec::new());
         let mut x1 = bdr;
+        let mut dx = Vec::new();
         for i in 0..grid.len() {
             let (n, x2) = grid[i];
             coord.extend((0..n).map(|xx| x1 + xx as Float * (x2 - x1) / n as Float));
             grid_idx.extend(std::iter::repeat(i).take(n));
+            dx.push((x2 - x1) / n as Float);
             x1 = x2;
         }
         coord.push(x1);
         Self {
             bdr,
             grid,
+            dx,
             n,
             coord,
             grid_idx,
@@ -59,7 +61,7 @@ impl Grid2D {
     }
     #[inline]
     pub fn idx(&self, i: usize, j: usize) -> usize {
-        i * self.grid.0.n + j
+        i * self.grid.1.n + j
     }
     pub fn idx_inv(&self, idx: usize) -> (usize, usize) {
         (idx / self.grid.0.n, idx % self.grid.0.n)
@@ -104,6 +106,25 @@ impl Grid2D {
             println!();
         }
     }
+    pub fn rz_mean(&self, v: &MyVec) -> Float {
+        let rs = &self.grid.0.coord;
+        let drs: Vec<Float> = (0..self.grid.0.n)
+            .map(|i| self.grid.0.dx[self.grid.0.grid_idx[i]])
+            .collect();
+        let dzs: Vec<Float> = (0..self.grid.1.n)
+            .map(|j| self.grid.1.dx[self.grid.1.grid_idx[j]])
+            .collect();
+        let r_weights: Vec<Float> = rs.iter().zip(drs.iter()).map(|(r, dr)| r * dr).collect();
+        let z_weights: Vec<Float> = dzs;
+        let total_weight: Float = r_weights.iter().sum::<Float>() * z_weights.iter().sum::<Float>();
+        let mut sum = 0.0;
+        for i in 0..self.grid.0.n {
+            for j in 0..self.grid.1.n {
+                sum += v.0[self.idx(i, j)] * r_weights[i] * z_weights[j];
+            }
+        }
+        sum / total_weight
+    }
 }
 pub enum BorderCond2D {
     Value(Vec<Float>),
@@ -130,7 +151,7 @@ pub fn diffusion_eqn_rz(
         } else {
             grid_r[rii - 1].1
         };
-        let dr = (grid_r[rii].1 - r0) / grid_r[rii].0 as Float;
+        let dr = grid.grid.0.dx[rii];
         for zjj in 0..grid_z.len() {
             let z0 = if zjj == 0 {
                 grid.grid.1.bdr
@@ -138,7 +159,7 @@ pub fn diffusion_eqn_rz(
                 grid_z[zjj - 1].1
             };
             let zj_offset: usize = grid_z[0..zjj].iter().map(|z| z.0).sum();
-            let dz = (grid_z[zjj].1 - z0) / grid_z[zjj].0 as Float;
+            let dz = grid.grid.1.dx[zjj];
             let coeff_loc = coeff[rii][zjj];
             for ri in ri_offset..(ri_offset + grid_r[rii].0) {
                 let r = 0.5 * (grid.grid.0.coord[ri] + grid.grid.0.coord[ri + 1]);

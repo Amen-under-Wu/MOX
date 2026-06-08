@@ -27,11 +27,21 @@ impl MaterialData {
     }
     pub fn fuel() -> Self {
         Self {
-            sigtr: (0.1665, 0.21745),
-            sigma: (5.988e-4, 2.395e-3),
-            nusigf: (1.4311e-4, 3.6931e-3),
-            sigf: (5.6475e-5, 1.447e-3),
-            sigr: 1.9215e-3,
+            sigtr: (16.65, 21.745),
+            sigma: (5.988e-2, 2.395e-1),
+            nusigf: (1.4311e-2, 3.6931e-1),
+            sigf: (5.6475e-1, 1.447e-2),
+            sigr: 1.9215e-1,
+        }
+    }
+    pub fn carbon() -> Self {
+        const SIGTR: Float = 41.0 * 17.0 / 18.0;
+        Self {
+            sigtr: (SIGTR, SIGTR),
+            sigma: (0.0, 2.9e-2),
+            nusigf: (0.0, 0.0),
+            sigf: (0.0, 0.0),
+            sigr: 20.0,
         }
     }
 }

@@ -625,7 +625,7 @@ impl SORSolver {
         //const MAX_ITER: usize = 50;
         for _ in 0..MAX_ITER {
             res = &self.iter_mat * &res + &self.iter_vec;
-            //println!("{}", (&self.orig_mat * &res - &self.b).norm2());
+            //println!("{:.2e}", (&self.orig_mat * &res - &self.b).norm2());
             if (&self.orig_mat * &res - &self.b).norm2() < self.eps {
                 return Ok(res);
             }

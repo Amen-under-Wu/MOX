@@ -51,8 +51,8 @@ impl Convection {
             }
         }
         let brd_z = (
-            BorderCond2D::Value(vec![t_in; zn]),
-            BorderCond2D::Deriv(vec![0.0; zn]),
+            BorderCond2D::Value(vec![t_in; rn]),
+            BorderCond2D::Deriv(vec![0.0; rn]),
         );
         let eqn = diffusion_eqn_rz(
             &self.grid,
