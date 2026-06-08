@@ -23,7 +23,7 @@ fn test_feedback() {
         let thermo = diff.thermo_group_flux(&fast);
         let heat = diff.power_src(&fast, &thermo, EF);
         let temp = conv.temp_solve(273.15, &heat, &vec![273.15; 15]);
-        let temp_avg = grid.rz_mean(&temp);
+        let temp_avg = grid.rz_mean_loc(&temp, 0, 0);
         diff.material[0][0].sigma = (
             sigma_orig.0 * (temp_avg / 273.15).powf(0.5),
             sigma_orig.1 * (temp_avg / 273.15).powf(0.5),
@@ -46,6 +46,5 @@ fn test_feedback() {
 }
 
 fn main() {
-    // _test_eqn();
     test_feedback();
 }

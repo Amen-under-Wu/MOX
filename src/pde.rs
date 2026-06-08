@@ -125,6 +125,19 @@ impl Grid2D {
         }
         sum / total_weight
     }
+    pub fn rz_mean_loc(&self, v: &MyVec, rii: usize, zjj: usize) -> Float {
+        let ri_offset: usize = self.grid.0.grid[0..rii].iter().map(|x| x.0).sum();
+        let zj_offset: usize = self.grid.1.grid[0..zjj].iter().map(|z| z.0).sum();
+        let weight_r = &self.grid.0.coord[ri_offset..(ri_offset + self.grid.0.grid[rii].0)];
+        let total_weight = weight_r.iter().sum::<Float>() * self.grid.1.grid[zjj].0 as Float;
+        let mut sum = 0.0;
+        for i in ri_offset..(ri_offset + self.grid.0.grid[rii].0) {
+            for j in zj_offset..(zj_offset + self.grid.1.grid[zjj].0) {
+                sum += v.0[self.idx(i, j)] * weight_r[i - ri_offset];
+            }
+        }
+        sum / total_weight
+    }
 }
 pub enum BorderCond2D {
     Value(Vec<Float>),
