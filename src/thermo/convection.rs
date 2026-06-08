@@ -4,10 +4,22 @@ use crate::pde::{BorderCond2D, Grid2D, convec_mat_z, diffusion_eqn_rz};
 
 pub struct FluidData {
     pub h: Float,
-    pub rho: Float,
     pub cp: Float,
     pub lambda: Float,
-    pub u: Float,
+    pub dmdt: Float,
+}
+impl FluidData {
+    pub fn helium(d_pebble: Float, dmdt: Float) -> Self {
+        const NU: Float = 200.0;
+        let lambda = 0.3;
+        let h = NU * lambda / d_pebble;
+        Self {
+            h,
+            cp: 5.193e3,
+            lambda,
+            dmdt,
+        }
+    }
 }
 
 pub struct Convection {
@@ -49,7 +61,11 @@ impl Convection {
             &coeff_vec,
             &src_vec,
         );
-        let convec_mat = convec_mat_z(&self.grid, self.fluid.u * self.fluid.rho * self.fluid.cp);
+        let convec_mat = convec_mat_z(&self.grid, self.fluid.dmdt * self.fluid.cp);
         (eqn.0 + convec_mat, eqn.1)
+    }
+    pub fn temp_solve(&self, t_in: Float, p: &MyVec, t_wall: &Vec<Float>) -> MyVec {
+        let (a, b) = self.convec_eqn(t_in, p, t_wall);
+        SORSolver::new(&a, &b, 1.5).solve().unwrap()
     }
 }

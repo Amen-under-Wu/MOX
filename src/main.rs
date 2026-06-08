@@ -2,6 +2,7 @@ use reactor::matrix::*;
 use reactor::nuke::diffusion::Diffusion;
 use reactor::nuke::material::MaterialData;
 use reactor::pde::*;
+use reactor::thermo::convection::*;
 
 fn _test_eqn() {
     let grid = Grid2D::new(0.0, vec![(5, 1.0), (5, 2.0)], 0.0, vec![(5, 1.5), (5, 3.0)]);
@@ -52,16 +53,20 @@ fn test_nuke() {
     let diff = Diffusion::new(mat, grid.clone());
     let init = MyVec(vec![1e14; 100]);
     let res = diff.fast_group_flux(&init);
-    for j in 0..10 {
-        for i in 0..10 {
-            print!("{:<6} ", format!("{:.2}", res[grid.idx(i, j)]));
-        }
-        println!("");
-    }
+    grid.print_vec(&res);
     let res = diff.thermo_group_flux(&res);
+    grid.print_vec(&res);
+}
+
+fn test_thermo() {
+    let grid = Grid2D::new(0.0, vec![(10, 1.5)], 0.0, vec![(10, 11.0)]);
+    let helium = FluidData::helium(0.06, 96.0 / (1.5 * 1.5 * 3.14));
+    let conv = Convection::new(helium, grid.clone());
+    let src = grid.fn2myvec(&|r, z| 20.0 * (3.14 * z / 11.0).sin() * (3.14 * r / 1.5).cos());
+    let res = conv.temp_solve(0.0, &src, &vec![0.0; 10]);
     for j in 0..10 {
         for i in 0..10 {
-            print!("{:<6}", format!("{:.2}", res[grid.idx(i, j)]));
+            print!("{:<8}", format!("{:.2E}", res[grid.idx(i, j)]));
         }
         println!("");
     }
@@ -70,4 +75,5 @@ fn test_nuke() {
 fn main() {
     // _test_eqn();
     test_nuke();
+    test_thermo();
 }

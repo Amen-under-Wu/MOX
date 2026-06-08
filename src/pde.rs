@@ -76,6 +76,34 @@ impl Grid2D {
             self.grid.1.grid.iter().map(|x| x.0).collect(),
         )
     }
+    pub fn fn2vec(&self, f: &dyn Fn(Float, Float) -> Float) -> Vec<Vec<Float>> {
+        let mut v = Vec::new();
+        for i in 0..self.grid.0.n {
+            let mut v_i = Vec::new();
+            for j in 0..self.grid.1.n {
+                v_i.push(f(self.grid.0.coord[i], self.grid.1.coord[j]));
+            }
+            v.push(v_i);
+        }
+        v
+    }
+    pub fn fn2myvec(&self, f: &dyn Fn(Float, Float) -> Float) -> MyVec {
+        let mut v = Vec::new();
+        for i in 0..self.grid.0.n {
+            for j in 0..self.grid.1.n {
+                v.push(f(self.grid.0.coord[i], self.grid.1.coord[j]));
+            }
+        }
+        MyVec(v)
+    }
+    pub fn print_vec(&self, v: &MyVec) {
+        for j in 0..self.grid.1.n {
+            for i in 0..self.grid.0.n {
+                print!("{:<8} ", format!("{:.2E}", v.0[self.idx(i, j)]));
+            }
+            println!();
+        }
+    }
 }
 pub enum BorderCond2D {
     Value(Vec<Float>),
