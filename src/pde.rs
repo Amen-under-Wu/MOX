@@ -305,10 +305,7 @@ pub fn convec_mat_z(grid: &Grid2D, u: Float) -> SparseMatrix {
         let dz = (grid_z[zjj].1 - z0) / grid_z[zjj].0 as Float;
         for zj in zj_offset..(zj_offset + grid_z[zjj].0) {
             for ri in 0..rn {
-                let idx = (
-                    grid.idx(ri, zj),
-                    grid.idx(ri, zj.saturating_sub(1)),
-                );
+                let idx = (grid.idx(ri, zj), grid.idx(ri, zj.saturating_sub(1)));
                 if zj == zj_offset {
                     if zjj != 0 {
                         let z_down = if zjj == 1 {

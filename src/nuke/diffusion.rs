@@ -55,7 +55,7 @@ impl Diffusion {
                 let coarse = self.grid.to_coarse(ri, zi);
                 let mat = &self.material[coarse.0][coarse.1];
                 src_vec[ri][zi] = thermo_group[idx] * mat.nusigf.1;
-                add_data.push((idx, idx,mat.nusigf.0-mat.sigtr.0));
+                add_data.push((idx, idx, mat.nusigf.0 - mat.sigtr.0));
             }
         }
         let add_mat = SparseMatrix::new_with_data(rn * zn, rn * zn, add_data);
@@ -114,7 +114,7 @@ impl Diffusion {
                 let coarse = self.grid.to_coarse(ri, zi);
                 let mat = &self.material[coarse.0][coarse.1];
                 src_vec[ri][zi] = fast_group[idx] * mat.sigr;
-                add_data.push((idx, idx,-mat.sigtr.1));
+                add_data.push((idx, idx, -mat.sigtr.1));
             }
         }
         let add_mat = SparseMatrix::new_with_data(rn * zn, rn * zn, add_data);

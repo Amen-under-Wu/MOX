@@ -1,7 +1,7 @@
 use reactor::matrix::*;
-use reactor::pde::*;
-use reactor::nuke::material::MaterialData;
 use reactor::nuke::diffusion::Diffusion;
+use reactor::nuke::material::MaterialData;
+use reactor::pde::*;
 
 fn _test_eqn() {
     let grid = Grid2D::new(0.0, vec![(5, 1.0), (5, 2.0)], 0.0, vec![(5, 1.5), (5, 3.0)]);

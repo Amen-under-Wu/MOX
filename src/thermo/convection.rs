@@ -1,6 +1,6 @@
 use crate::Float;
 use crate::matrix::{MyVec, SORSolver, SparseMatrix};
-use crate::pde::{BorderCond2D, Grid2D, diffusion_eqn_rz, convec_mat_z};
+use crate::pde::{BorderCond2D, Grid2D, convec_mat_z, diffusion_eqn_rz};
 
 pub struct FluidData {
     pub h: Float,
@@ -23,7 +23,10 @@ impl Convection {
         // nabla*(lambda*nabla T)-c*u*dT/dz+p=0
         let (grid_rn, grid_zn) = self.grid.grid_n();
         let coeff_vec = vec![vec![self.fluid.lambda; grid_zn.len()]; grid_rn.len()];
-        let bdr_r_vec = t_wall.iter().map(|&t| (1.0, self.fluid.lambda / self.fluid.h, t)).collect();
+        let bdr_r_vec = t_wall
+            .iter()
+            .map(|&t| (1.0, self.fluid.lambda / self.fluid.h, t))
+            .collect();
 
         let rn = grid_rn.iter().sum();
         let zn = grid_zn.iter().sum();
@@ -35,9 +38,18 @@ impl Convection {
                 src_vec[ri][zi] = p[idx];
             }
         }
-        let brd_z = (BorderCond2D::Value(vec![t_in; zn]), BorderCond2D::Deriv(vec![0.0; zn]));
-        let eqn = diffusion_eqn_rz(&self.grid, &BorderCond2D::Comb(bdr_r_vec), &brd_z, &coeff_vec, &src_vec);
-        let convec_mat = convec_mat_z(&self.grid, self.fluid.u* self.fluid.rho * self.fluid.cp);
+        let brd_z = (
+            BorderCond2D::Value(vec![t_in; zn]),
+            BorderCond2D::Deriv(vec![0.0; zn]),
+        );
+        let eqn = diffusion_eqn_rz(
+            &self.grid,
+            &BorderCond2D::Comb(bdr_r_vec),
+            &brd_z,
+            &coeff_vec,
+            &src_vec,
+        );
+        let convec_mat = convec_mat_z(&self.grid, self.fluid.u * self.fluid.rho * self.fluid.cp);
         (eqn.0 + convec_mat, eqn.1)
     }
 }
