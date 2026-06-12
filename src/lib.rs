@@ -1,3 +1,5 @@
+pub mod input;
+
 pub mod matrix;
 pub mod ode;
 pub mod pde;

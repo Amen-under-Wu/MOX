@@ -35,6 +35,16 @@ impl Grid1D {
             grid_idx,
         }
     }
+    fn from_tokens(tokens: &Vec<String>) -> Self {
+        let bdr = tokens[0].parse::<Float>().unwrap();
+        let mut grid = Vec::new();
+        for i in 0..(tokens.len() - 1) / 2 {
+            let n = tokens[2 * i + 1].parse::<usize>().unwrap();
+            let x = tokens[2 * i + 2].parse::<Float>().unwrap();
+            grid.push((n, x));
+        }
+        Self::new(bdr, grid)
+    }
     fn x2idx(&self, x: Float) -> usize {
         for i in 0..self.grid.len() {
             if x < self.grid[i].1 {
@@ -58,6 +68,11 @@ impl Grid2D {
         Self {
             grid: (Grid1D::new(x, grid_x), Grid1D::new(y, grid_y)),
         }
+    }
+    pub fn from_tokens(tokens: (&Vec<String>, &Vec<String>)) -> Self {
+        let grid_x = Grid1D::from_tokens(tokens.0);
+        let grid_y = Grid1D::from_tokens(tokens.1);
+        Self { grid: (grid_x, grid_y) }
     }
     #[inline]
     pub fn idx(&self, i: usize, j: usize) -> usize {
